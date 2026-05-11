@@ -81,7 +81,7 @@ export default function Cycles({ user }) {
     setEnding(true)
     setCycleError(null)
     try {
-      const updated = await endCycle(activeCycle.id, {})
+      const updated = await endCycle(activeCycle.id, user.id)
       setEndedCycle(updated)
       setActiveCycle(null)
       setView('report')
