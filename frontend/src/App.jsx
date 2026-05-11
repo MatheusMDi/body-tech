@@ -6,6 +6,7 @@ import { ModalProvider } from './contexts/ModalContext.jsx'
 import { UserProvider } from './contexts/UserContext.jsx'
 import { OnboardingProvider, useOnboarding } from './contexts/OnboardingContext.jsx'
 import { SettingsProvider } from './contexts/SettingsContext.jsx'
+import { ModuleProvider } from './contexts/ModuleContext.jsx'
 import Layout from './components/Layout.jsx'
 import GlobalModals from './components/GlobalModals.jsx'
 import StickyBar from './components/StickyBar.jsx'
@@ -15,6 +16,8 @@ import Log from './pages/Log.jsx'
 import Progress from './pages/Progress.jsx'
 import Settings from './pages/Settings.jsx'
 import Login from './pages/Login.jsx'
+import Workout from './pages/Workout.jsx'
+import Cycles from './pages/Cycles.jsx'
 
 function OnboardingGate({ user }) {
   const { isOnboarded, loading } = useOnboarding()
@@ -31,19 +34,23 @@ function OnboardingGate({ user }) {
 
   return (
     <SettingsProvider userId={user.id}>
-      <ModalProvider>
-        <Layout>
-          <StickyBar />
-          <Routes>
-            <Route path="/"         element={<Home     user={user} />} />
-            <Route path="/log"      element={<Log      user={user} />} />
-            <Route path="/progress" element={<Progress user={user} />} />
-            <Route path="/settings" element={<Settings user={user} />} />
-            <Route path="*"         element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-        <GlobalModals />
-      </ModalProvider>
+      <ModuleProvider userId={user.id}>
+        <ModalProvider>
+          <Layout>
+            <StickyBar />
+            <Routes>
+              <Route path="/"         element={<Home     user={user} />} />
+              <Route path="/log"      element={<Log      user={user} />} />
+              <Route path="/progress" element={<Progress user={user} />} />
+              <Route path="/settings" element={<Settings user={user} />} />
+              <Route path="/workout"  element={<Workout  user={user} />} />
+              <Route path="/cycles"   element={<Cycles   user={user} />} />
+              <Route path="*"         element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
+          <GlobalModals />
+        </ModalProvider>
+      </ModuleProvider>
     </SettingsProvider>
   )
 }

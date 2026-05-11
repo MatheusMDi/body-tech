@@ -1,14 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import FAB from './FAB.jsx'
 import { useTheme } from '../contexts/ThemeContext.jsx'
-
-const NAV_ITEMS = [
-  { to: '/',         label: 'Home',     icon: HomeIcon },
-  { to: '/log',      label: 'Registro', icon: LogIcon },
-  null, // FAB placeholder
-  { to: '/progress', label: 'Progresso',icon: ChartIcon },
-  { to: '/settings', label: 'Config',   icon: SettingsIcon },
-]
+import { useModules } from '../contexts/ModuleContext.jsx'
 
 export default function Layout({ children }) {
   const { theme, toggleTheme } = useTheme()
@@ -20,7 +13,6 @@ export default function Layout({ children }) {
         <div className="max-w-md mx-auto px-4 h-8 flex items-center justify-between">
           <span className="text-primary font-bold text-[11px] uppercase tracking-widest">Body Tech</span>
           <div className="flex items-center gap-3">
-            <span className="text-theme-faint text-[10px] uppercase tracking-wide">18:6</span>
             <button
               onClick={toggleTheme}
               className="text-theme-faint hover:text-theme transition-colors text-[14px]"
@@ -38,39 +30,65 @@ export default function Layout({ children }) {
       </main>
 
       {/* Bottom navigation with FAB center */}
-      <nav
-        className="border-t pb-safe shadow-sticky sticky bottom-0 z-40"
-        style={{ backgroundColor: 'var(--theme-bg)', borderColor: 'var(--theme-border)' }}
-      >
-        <div className="max-w-md mx-auto flex items-end">
-          {NAV_ITEMS.map((item, i) => {
-            if (!item) {
-              return (
-                <div key="fab" className="flex-1 flex justify-center items-center pb-1 -mt-5">
-                  <FAB />
-                </div>
-              )
-            }
-            const Icon = item.icon
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === '/'}
-                className={({ isActive }) =>
-                  `flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-bold uppercase tracking-wide transition-colors ${
-                    isActive ? 'text-primary' : 'text-stone'
-                  }`
-                }
-              >
-                <Icon className="w-5 h-5" />
-                {item.label}
-              </NavLink>
-            )
-          })}
-        </div>
-      </nav>
+      <BottomNav />
     </div>
+  )
+}
+
+function BottomNav() {
+  const { isModuleActive } = useModules()
+
+  const items = [
+    { to: '/', label: 'Home', icon: HomeIcon },
+    { to: '/log', label: 'Registro', icon: LogIcon },
+  ]
+
+  if (isModuleActive('workout')) {
+    items.push({ to: '/workout', label: 'Treino', icon: WorkoutIcon })
+  }
+
+  items.push(null) // FAB placeholder
+
+  if (isModuleActive('cycles')) {
+    items.push({ to: '/cycles', label: 'Ciclos', icon: CyclesIcon })
+  }
+
+  items.push({ to: '/progress', label: 'Progresso', icon: ChartIcon })
+  items.push({ to: '/settings', label: 'Config', icon: SettingsIcon })
+
+  return (
+    <nav
+      className="border-t pb-safe shadow-sticky sticky bottom-0 z-40"
+      style={{ backgroundColor: 'var(--theme-bg)', borderColor: 'var(--theme-border)' }}
+    >
+      <div className="max-w-md mx-auto flex items-end">
+        {items.map((item, i) => {
+          if (!item) {
+            return (
+              <div key="fab" className="flex-1 flex justify-center items-center pb-1 -mt-5">
+                <FAB />
+              </div>
+            )
+          }
+          const Icon = item.icon
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) =>
+                `flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                  isActive ? 'text-primary' : 'text-stone'
+                }`
+              }
+            >
+              <Icon className="w-5 h-5" />
+              {item.label}
+            </NavLink>
+          )
+        })}
+      </div>
+    </nav>
   )
 }
 
@@ -103,6 +121,22 @@ function SettingsIcon({ className }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="square" strokeLinejoin="miter" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
       <path strokeLinecap="square" strokeLinejoin="miter" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  )
+}
+
+function WorkoutIcon({ className }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" d="M6 5v14M18 5v14M3 8h3m12 0h3M3 16h3m12 0h3M9 12h6" />
+    </svg>
+  )
+}
+
+function CyclesIcon({ className }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
     </svg>
   )
 }
