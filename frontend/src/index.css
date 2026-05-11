@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background-color: #000000;
+    color: #ffffff;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-surface-dark font-bold text-[16px] leading-[1.25] px-6 py-[11px] h-11 rounded-sm transition-colors duration-100 active:bg-primary-dark;
+  }
+
+  .btn-outline {
+    @apply bg-transparent text-ink font-bold text-[16px] border-2 border-primary px-[13px] py-[11px] rounded-sm transition-colors duration-100;
+  }
+
+  .btn-outline-dark {
+    @apply bg-transparent text-on-dark font-bold text-[16px] border border-on-dark px-[13px] py-[11px] rounded-sm;
+  }
+
+  .btn-ghost {
+    @apply text-primary font-bold text-[16px] bg-transparent border-none p-0;
+  }
+
+  .card {
+    @apply bg-canvas border border-hairline rounded-sm;
+  }
+
+  .card-dark {
+    @apply bg-surface-dark border border-hairline-strong rounded-sm;
+  }
+
+  .input-field {
+    @apply bg-canvas text-ink border border-hairline rounded-sm px-4 py-3 h-11 text-[16px] w-full outline-none transition-colors focus:border-2 focus:border-primary;
+  }
+
+  .corner-square {
+    @apply absolute w-3 h-3 bg-primary;
+  }
+
+  .badge-tag {
+    @apply bg-surface-soft text-body text-[11px] font-bold uppercase px-[10px] py-1 rounded-sm tracking-wide;
+  }
+
+  .section-title {
+    @apply text-[24px] font-bold leading-[1.25] text-on-dark;
+  }
+}
+
+/* Safe area for mobile devices */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #5e5e5e;
+  border-radius: 2px;
+}

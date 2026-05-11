@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: body-tech-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: America/Sao_Paulo
+      - key: PORT
+        value: 3001
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_EMAIL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+    healthCheckPath: /health
