@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import Modal from './Modal.jsx'
 import FlagSelector from './FlagSelector.jsx'
+import PhotoUpload from './meal/PhotoUpload.jsx'
 import { useMeals } from '../hooks/useMeals.js'
 import { useToast } from '../contexts/ToastContext.jsx'
 import { getFavorites, upsertFavorite } from '../services/favorites.js'
+import { uploadMealPhoto, deleteMealPhoto } from '../services/photoUpload.js'
 import { isOutsideWindow, todayDateString } from '../lib/utils.js'
 import { PROTOCOL } from '../lib/constants.js'
 
@@ -18,6 +20,9 @@ export default function MealModal({ userId, onClose, initialData = null }) {
   const [favorites, setFavorites] = useState([])
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState('form') // 'form' | 'confirm'
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(initialData?.photo_url ?? null)
+  const [removedPhoto, setRemovedPhoto] = useState(false)
 
   const outsideWindow = isOutsideWindow()
 
@@ -43,6 +48,24 @@ export default function MealModal({ userId, onClose, initialData = null }) {
     const proteinNum = parseFloat(protein) || 0
     const carbNum = parseFloat(carbs) || 0
 
+    let photoPath = initialData?.photo_path ?? null
+    let photoUrl = initialData?.photo_url ?? null
+
+    if (removedPhoto && photoPath) {
+      await deleteMealPhoto(photoPath)
+      photoPath = null
+      photoUrl = null
+    }
+
+    if (photoFile) {
+      try {
+        photoPath = await uploadMealPhoto(photoFile, userId)
+        photoUrl = photoPreview
+      } catch {
+        showToast('Foto não pôde ser enviada', 'warning')
+      }
+    }
+
     await addMeal({
       description,
       protein_g: proteinNum,
@@ -51,9 +74,10 @@ export default function MealModal({ userId, onClose, initialData = null }) {
       flags: allFlags,
       is_outside_window: outsideWindow,
       is_water: false,
+      photo_path: photoPath,
+      photo_url: photoUrl,
     })
 
-    // Update favorites (auto-favorite after use)
     await upsertFavorite(userId, { description, protein_g: proteinNum, carb_g: carbNum })
 
     showToast('Refeição registrada', 'success')
@@ -163,6 +187,17 @@ export default function MealModal({ userId, onClose, initialData = null }) {
             Flags
           </label>
           <FlagSelector selected={flags} onChange={setFlags} />
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wide text-theme-faint mb-2">
+            Foto (opcional)
+          </label>
+          <PhotoUpload
+            value={photoPreview}
+            onChange={(file, preview) => { setPhotoFile(file); setPhotoPreview(preview); setRemovedPhoto(false) }}
+            onRemove={() => { setPhotoFile(null); setPhotoPreview(null); setRemovedPhoto(true) }}
+          />
         </div>
 
         <div className="flex gap-3 pt-2">

@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { formatLoggedAt } from '../lib/utils.js'
 import { FLAGS } from '../lib/constants.js'
 import { useToast } from '../contexts/ToastContext.jsx'
+import { getPhotoUrl, deleteMealPhoto } from '../services/photoUpload.js'
 import Modal from './Modal.jsx'
 import MealModal from './MealModal.jsx'
+import PhotoModal from './meal/PhotoModal.jsx'
 
 const ALL_FLAGS = { ...FLAGS.AUTO, ...FLAGS.MANUAL }
 
@@ -50,12 +52,22 @@ export default function MealTimeline({ meals, totals, userId, onRefresh }) {
   const { showToast } = useToast()
   const [editMeal, setEditMeal] = useState(null)
   const [deleteMeal, setDeleteMeal] = useState(null)
+  const [viewPhoto, setViewPhoto] = useState(null)
 
   async function handleDelete(meal) {
+    if (meal.photo_path) await deleteMealPhoto(meal.photo_path)
     await supabase.from('meals').delete().eq('id', meal.id)
     setDeleteMeal(null)
     showToast('Refeição excluída', 'info')
     onRefresh?.()
+  }
+
+  async function openPhoto(meal) {
+    if (meal.photo_url) { setViewPhoto(meal.photo_url); return }
+    if (meal.photo_path) {
+      const url = await getPhotoUrl(meal.photo_path)
+      if (url) setViewPhoto(url)
+    }
   }
 
   if (!meals || meals.length === 0) {
@@ -88,13 +100,29 @@ export default function MealTimeline({ meals, totals, userId, onRefresh }) {
             >
               {i === 0 && <div className="corner-square top-0 left-0" />}
 
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-primary font-bold text-[13px]">{formatLoggedAt(meal.logged_at)}</span>
-                  {meal.is_outside_window && (
-                    <span className="badge-tag border border-warning text-warning">Fora da janela</span>
-                  )}
-                </div>
+              <div className="flex items-start gap-3 mb-2">
+                {/* Photo thumbnail */}
+                {(meal.photo_path || meal.photo_url) && (
+                  <button
+                    onClick={() => openPhoto(meal)}
+                    className="w-14 h-14 rounded-sm overflow-hidden border shrink-0"
+                    style={{ borderColor: 'var(--theme-border)' }}
+                    title="Ver foto"
+                  >
+                    {meal.photo_url
+                      ? <img src={meal.photo_url} alt="" className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center text-[20px]" style={{ backgroundColor: 'var(--theme-surface-soft)' }}>📷</div>
+                    }
+                  </button>
+                )}
+
+                <div className="flex-1 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-primary font-bold text-[13px]">{formatLoggedAt(meal.logged_at)}</span>
+                    {meal.is_outside_window && (
+                      <span className="badge-tag border border-warning text-warning">Fora da janela</span>
+                    )}
+                  </div>
                 {/* Edit / delete actions */}
                 <div className="flex gap-1 shrink-0">
                   <button
@@ -116,7 +144,8 @@ export default function MealTimeline({ meals, totals, userId, onRefresh }) {
                     </svg>
                   </button>
                 </div>
-              </div>
+                </div>{/* end flex-1 header row */}
+              </div>{/* end photo + header row */}
 
               <div className="text-theme font-bold text-[15px] mb-2">{meal.description}</div>
 
@@ -163,6 +192,8 @@ export default function MealTimeline({ meals, totals, userId, onRefresh }) {
             protein_g: editMeal.protein_g,
             carb_g: editMeal.carb_g,
             flags: editMeal.meal_flags?.map(f => f.flag) ?? [],
+            photo_url: editMeal.photo_url ?? null,
+            photo_path: editMeal.photo_path ?? null,
           }}
         />
       )}
@@ -175,6 +206,9 @@ export default function MealTimeline({ meals, totals, userId, onRefresh }) {
           onCancel={() => setDeleteMeal(null)}
         />
       )}
+
+      {/* Photo viewer */}
+      {viewPhoto && <PhotoModal src={viewPhoto} onClose={() => setViewPhoto(null)} />}
     </>
   )
 }

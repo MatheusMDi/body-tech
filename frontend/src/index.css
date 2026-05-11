@@ -7,29 +7,29 @@
    Dark mode is default. Light mode overrides via html.light.
    ============================================================ */
 :root {
-  --theme-bg: #000000;
-  --theme-surface: #1a1a1a;
+  --theme-bg: #0d0d0d;
+  --theme-surface: #161616;
   --theme-surface-soft: #111111;
-  --theme-border: #5e5e5e;
-  --theme-border-subtle: #333333;
-  --theme-text: #ffffff;
-  --theme-text-muted: rgba(255,255,255,0.7);
-  --theme-text-faint: #898989;
-  --theme-input-bg: #1a1a1a;
-  --theme-input-border: #5e5e5e;
+  --theme-border: #262626;
+  --theme-border-subtle: #1c1c1c;
+  --theme-text: #e0e0e0;
+  --theme-text-muted: rgba(224,224,224,0.6);
+  --theme-text-faint: #5a5a5a;
+  --theme-input-bg: #161616;
+  --theme-input-border: #2a2a2a;
 }
 
 html.light {
-  --theme-bg: #F8F9FA;
-  --theme-surface: #FFFFFF;
-  --theme-surface-soft: #F1F3F5;
-  --theme-border: #E5E7EB;
-  --theme-border-subtle: #D1D5DB;
-  --theme-text: #1A1A2E;
-  --theme-text-muted: #6B7280;
-  --theme-text-faint: #9CA3AF;
-  --theme-input-bg: #FFFFFF;
-  --theme-input-border: #D1D5DB;
+  --theme-bg: #f5f4f2;
+  --theme-surface: #fafaf8;
+  --theme-surface-soft: #eeede9;
+  --theme-border: #dedad4;
+  --theme-border-subtle: #e8e6e1;
+  --theme-text: #1c1a18;
+  --theme-text-muted: #5c5852;
+  --theme-text-faint: #9e9a93;
+  --theme-input-bg: #fafaf8;
+  --theme-input-border: #dedad4;
 }
 
 @layer base {
