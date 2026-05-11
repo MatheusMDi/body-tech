@@ -1,25 +1,29 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { getOnboardingProgress } from '../services/onboarding.js'
+import { supabase } from '../lib/supabase.js'
 
 const OnboardingContext = createContext(null)
 
 export function OnboardingProvider({ user, children }) {
-  const [settings, setSettings] = useState(null)
+  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
     if (!user?.id) { setLoading(false); return }
-    const data = await getOnboardingProgress(user.id)
-    setSettings(data)
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, onboarding_completed, onboarding_step')
+      .eq('id', user.id)
+      .single()
+    setProfile(data)
     setLoading(false)
   }, [user?.id])
 
   useEffect(() => { refresh() }, [refresh])
 
-  const isOnboarded = settings?.onboarding_completed === true
+  const isOnboarded = profile?.onboarding_completed === true
 
   return (
-    <OnboardingContext.Provider value={{ settings, loading, isOnboarded, refresh }}>
+    <OnboardingContext.Provider value={{ profile, loading, isOnboarded, refresh }}>
       {children}
     </OnboardingContext.Provider>
   )

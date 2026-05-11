@@ -1,56 +1,61 @@
 import { PROTOCOL } from './constants.js'
 
 /**
- * Returns the current fasting state based on current time.
- * Fasting: 20:00 → 14:00 (18h). Eating: 14:00 → 20:00 (6h).
+ * Returns the current fasting state.
+ * Accepts optional options to override the default protocol hours.
+ * This allows per-user customization.
  */
-export function getFastingState(now = new Date()) {
+export function getFastingState(now = new Date(), options = {}) {
+  const startHour = options.fastStartHour ?? PROTOCOL.FASTING_START_HOUR
+  const endHour   = options.fastEndHour   ?? PROTOCOL.FASTING_END_HOUR
+  const durationH = computeFastingDuration(startHour, endHour)
+
   const hour = now.getHours()
   const minute = now.getMinutes()
   const totalMinutes = hour * 60 + minute
 
-  const windowOpen = PROTOCOL.FASTING_END_HOUR * 60   // 14:00 = 840
-  const windowClose = PROTOCOL.FASTING_START_HOUR * 60 // 20:00 = 1200
+  const windowOpen  = endHour * 60    // eating starts
+  const windowClose = startHour * 60  // eating ends
 
   const isEating = totalMinutes >= windowOpen && totalMinutes < windowClose
 
   if (isEating) {
     const minutesUntilClose = windowClose - totalMinutes
     const fastingStartedAt = getYesterday(now)
-    fastingStartedAt.setHours(PROTOCOL.FASTING_START_HOUR, 0, 0, 0)
+    fastingStartedAt.setHours(startHour, 0, 0, 0)
     return {
       state: 'EATING',
       isEating: true,
       minutesUntilTransition: minutesUntilClose,
-      nextTransitionLabel: `${formatTime(PROTOCOL.FASTING_START_HOUR, 0)} (fechar janela)`,
+      nextTransitionLabel: `${pad2(startHour)}:00 (fechar janela)`,
       fastingStartedAt,
       fastingElapsedMinutes: 0,
       fastingProgressPct: 0,
+      fastStartHour: startHour,
+      fastEndHour: endHour,
+      durationH,
     }
   }
 
   // Currently fasting
   let fastingStartedAt
   if (totalMinutes >= windowClose) {
-    // Past 20:00 today
     fastingStartedAt = new Date(now)
-    fastingStartedAt.setHours(PROTOCOL.FASTING_START_HOUR, 0, 0, 0)
+    fastingStartedAt.setHours(startHour, 0, 0, 0)
   } else {
-    // Before 14:00 today — fasting started yesterday at 20:00
     fastingStartedAt = getYesterday(now)
-    fastingStartedAt.setHours(PROTOCOL.FASTING_START_HOUR, 0, 0, 0)
+    fastingStartedAt.setHours(startHour, 0, 0, 0)
   }
 
   const elapsedMs = now - fastingStartedAt
   const elapsedMinutes = Math.floor(elapsedMs / 60000)
-  const totalFastMinutes = PROTOCOL.FASTING_DURATION_HOURS * 60
+  const totalFastMinutes = durationH * 60
 
   const nextWindowOpen = new Date(now)
   if (totalMinutes >= windowClose) {
-    // Next eating window is tomorrow at 14:00
     nextWindowOpen.setDate(nextWindowOpen.getDate() + 1)
   }
-  nextWindowOpen.setHours(PROTOCOL.FASTING_END_HOUR, 0, 0, 0)
+  nextWindowOpen.setHours(endHour, 0, 0, 0)
 
   const minutesUntilTransition = Math.max(0, Math.floor((nextWindowOpen - now) / 60000))
 
@@ -58,12 +63,23 @@ export function getFastingState(now = new Date()) {
     state: 'FASTING',
     isEating: false,
     minutesUntilTransition,
-    nextTransitionLabel: `${formatTime(PROTOCOL.FASTING_END_HOUR, 0)} (abrir janela)`,
+    nextTransitionLabel: `${pad2(endHour)}:00 (abrir janela)`,
     fastingStartedAt,
     fastingElapsedMinutes: Math.min(elapsedMinutes, totalFastMinutes),
     fastingProgressPct: Math.min(100, (elapsedMinutes / totalFastMinutes) * 100),
+    fastStartHour: startHour,
+    fastEndHour: endHour,
+    durationH,
   }
 }
+
+function computeFastingDuration(startHour, endHour) {
+  // If start > end, window crosses midnight: e.g. 20→14 = 18h
+  if (startHour > endHour) return 24 - startHour + endHour
+  return endHour - startHour
+}
+
+function pad2(n) { return String(n).padStart(2, '0') }
 
 export function formatDuration(totalMinutes) {
   const h = Math.floor(totalMinutes / 60)
@@ -96,8 +112,8 @@ export function formatDateLabel(dateStr) {
   return `${day} ${d}/${m}`
 }
 
-export function isOutsideWindow(date = new Date()) {
-  const state = getFastingState(date)
+export function isOutsideWindow(date = new Date(), options = {}) {
+  const state = getFastingState(date, options)
   return !state.isEating
 }
 
@@ -123,4 +139,10 @@ export function getWeekDates(referenceDate = new Date()) {
     dates.push(todayDateString(d))
   }
   return dates
+}
+
+export function parseTimeToHour(timeStr) {
+  if (!timeStr) return null
+  const parts = timeStr.split(':')
+  return parseInt(parts[0], 10)
 }

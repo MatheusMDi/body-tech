@@ -13,28 +13,28 @@ import OnboardingStep8 from './OnboardingStep8.jsx'
 const TOTAL_STEPS = 8
 
 export default function OnboardingFlow({ user }) {
-  const { settings, refresh } = useOnboarding()
-  const [step, setStep] = useState(settings?.onboarding_step ?? 1)
+  const { profile, refresh } = useOnboarding()
+  const [step, setStep] = useState(profile?.onboarding_step ?? 1)
   const [saving, setSaving] = useState(false)
 
   // Accumulated form data across steps
   const [data, setData] = useState({
-    name: settings?.name ?? '',
-    weight_kg: settings?.weight_kg ?? '',
-    height_cm: settings?.height_cm ?? '',
-    goal_weight_kg: settings?.goal_weight_kg ?? '',
-    fasting_protocol: settings?.fasting_protocol ?? '18:6',
-    fast_start_time: settings?.fast_start_time ?? '20:00',
-    fast_end_time: settings?.fast_end_time ?? '14:00',
-    water_goal_liters: settings?.water_goal_liters ?? 4.0,
-    protein_goal_g: settings?.protein_goal_g ?? '',
-    trains: settings?.trains ?? false,
-    training_modality: settings?.training_modality ?? '',
-    training_time: settings?.training_time ?? '18:00',
-    training_days_per_week: settings?.training_days_per_week ?? 4,
-    active_supplements: settings?.active_supplements ?? [],
-    notifications_enabled: settings?.notifications_enabled ?? true,
-    notification_preferences: settings?.notification_preferences ?? {},
+    name: profile?.name ?? '',
+    weight_kg: profile?.weight_goal ?? '',
+    height_cm: profile?.height_cm ?? '',
+    goal_weight_kg: profile?.goal_weight_kg ?? '',
+    fasting_protocol: profile?.fasting_protocol ?? '18:6',
+    fast_start_time: profile?.fasting_start ?? '20:00',
+    fast_end_time: profile?.fasting_end ?? '14:00',
+    water_goal_liters: profile?.water_goal_ml ? profile.water_goal_ml / 1000 : 4.0,
+    protein_goal_g: profile?.protein_goal ?? '',
+    trains: profile?.trains ?? false,
+    training_modality: profile?.training_modality ?? '',
+    training_time: profile?.training_time ?? '18:00',
+    training_days_per_week: profile?.training_days_per_week ?? 4,
+    active_supplements: profile?.active_supplements ?? [],
+    notifications_enabled: profile?.notifications_enabled ?? true,
+    notification_preferences: profile?.notification_preferences ?? {},
   })
 
   function mergeData(partial) {

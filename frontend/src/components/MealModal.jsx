@@ -3,15 +3,18 @@ import Modal from './Modal.jsx'
 import FlagSelector from './FlagSelector.jsx'
 import PhotoUpload from './meal/PhotoUpload.jsx'
 import { useMeals } from '../hooks/useMeals.js'
+import { useFasting } from '../hooks/useFasting.js'
+import { useSettings } from '../contexts/SettingsContext.jsx'
 import { useToast } from '../contexts/ToastContext.jsx'
 import { getFavorites, upsertFavorite } from '../services/favorites.js'
 import { uploadMealPhoto, deleteMealPhoto } from '../services/photoUpload.js'
-import { isOutsideWindow, todayDateString } from '../lib/utils.js'
-import { PROTOCOL } from '../lib/constants.js'
+import { todayDateString } from '../lib/utils.js'
 
 export default function MealModal({ userId, onClose, initialData = null }) {
   const { addMeal } = useMeals(userId, todayDateString())
   const { showToast } = useToast()
+  const { settings } = useSettings()
+  const fasting = useFasting()
 
   const [description, setDescription] = useState(initialData?.description ?? '')
   const [protein, setProtein] = useState(initialData?.protein_g ? String(initialData.protein_g) : '')
@@ -24,7 +27,7 @@ export default function MealModal({ userId, onClose, initialData = null }) {
   const [photoPreview, setPhotoPreview] = useState(initialData?.photo_url ?? null)
   const [removedPhoto, setRemovedPhoto] = useState(false)
 
-  const outsideWindow = isOutsideWindow()
+  const outsideWindow = !fasting.isEating
 
   useEffect(() => {
     getFavorites(userId).then(setFavorites)
@@ -91,7 +94,7 @@ export default function MealModal({ userId, onClose, initialData = null }) {
         <div className="space-y-4">
           <p className="text-theme text-[15px]">
             Você está em <strong>jejum ativo</strong>. Janela abre às{' '}
-            <strong className="text-primary">{PROTOCOL.FASTING_END_HOUR}:00</strong>.
+            <strong className="text-primary">{settings.fastEndTime?.slice(0,5)}</strong>.
           </p>
           <p className="text-[13px] text-theme-muted">
             A refeição será marcada como <span className="text-warning font-bold">FORA_DA_JANELA</span>.
@@ -134,7 +137,7 @@ export default function MealModal({ userId, onClose, initialData = null }) {
 
       {outsideWindow && (
         <div className="border border-warning rounded-sm px-4 py-3 text-[13px] text-warning font-bold mb-4">
-          ⚠️ Jejum ativo — janela abre às {PROTOCOL.FASTING_END_HOUR}:00
+          ⚠️ Jejum ativo — janela abre às {settings.fastEndTime?.slice(0,5)}
         </div>
       )}
 

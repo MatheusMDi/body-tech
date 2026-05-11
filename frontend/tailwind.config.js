@@ -28,10 +28,14 @@ export default {
       },
       borderRadius: {
         none: '0px',
-        xs: '1px',
-        sm: '2px',
+        xs: '2px',
+        sm: '6px',
+        md: '10px',
+        lg: '14px',
+        xl: '20px',
+        '2xl': '24px',
         full: '9999px',
-        DEFAULT: '2px',
+        DEFAULT: '10px',
       },
       fontFamily: {
         sans: ['Inter', 'Arial', 'Helvetica', 'sans-serif'],
