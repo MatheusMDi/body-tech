@@ -1,46 +1,73 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
+import FAB from './FAB.jsx'
+import { useTheme } from '../contexts/ThemeContext.jsx'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Home', icon: HomeIcon },
-  { to: '/log', label: 'Registro', icon: LogIcon },
-  { to: '/progress', label: 'Progresso', icon: ChartIcon },
-  { to: '/settings', label: 'Config', icon: SettingsIcon },
+  { to: '/',         label: 'Home',     icon: HomeIcon },
+  { to: '/log',      label: 'Registro', icon: LogIcon },
+  null, // FAB placeholder
+  { to: '/progress', label: 'Progresso',icon: ChartIcon },
+  { to: '/settings', label: 'Config',   icon: SettingsIcon },
 ]
 
 export default function Layout({ children }) {
+  const { theme, toggleTheme } = useTheme()
+
   return (
-    <div className="flex flex-col min-h-screen bg-surface-dark">
+    <div className="flex flex-col min-h-screen bg-theme">
       {/* Top utility bar */}
-      <div className="bg-surface-dark border-b border-hairline-strong pt-safe">
+      <div className="border-b pt-safe" style={{ backgroundColor: 'var(--theme-bg)', borderColor: 'var(--theme-border)' }}>
         <div className="max-w-md mx-auto px-4 h-8 flex items-center justify-between">
           <span className="text-primary font-bold text-[11px] uppercase tracking-widest">Body Tech</span>
-          <span className="text-mute text-[10px] uppercase tracking-wide">Protocol 18:6</span>
+          <div className="flex items-center gap-3">
+            <span className="text-theme-faint text-[10px] uppercase tracking-wide">18:6</span>
+            <button
+              onClick={toggleTheme}
+              className="text-theme-faint hover:text-theme transition-colors text-[14px]"
+              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main content */}
-      <main className="flex-1 max-w-md mx-auto w-full px-4 py-6 overflow-y-auto">
+      <main className="flex-1 max-w-md mx-auto w-full px-4 py-4 overflow-y-auto">
         {children}
       </main>
 
-      {/* Bottom navigation */}
-      <nav className="bg-surface-dark border-t border-hairline-strong pb-safe shadow-sticky sticky bottom-0 z-50">
-        <div className="max-w-md mx-auto flex">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                `flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-bold uppercase tracking-wide transition-colors ${
-                  isActive ? 'text-primary' : 'text-stone'
-                }`
-              }
-            >
-              <Icon className="w-5 h-5" />
-              {label}
-            </NavLink>
-          ))}
+      {/* Bottom navigation with FAB center */}
+      <nav
+        className="border-t pb-safe shadow-sticky sticky bottom-0 z-40"
+        style={{ backgroundColor: 'var(--theme-bg)', borderColor: 'var(--theme-border)' }}
+      >
+        <div className="max-w-md mx-auto flex items-end">
+          {NAV_ITEMS.map((item, i) => {
+            if (!item) {
+              return (
+                <div key="fab" className="flex-1 flex justify-center items-center pb-1 -mt-5">
+                  <FAB />
+                </div>
+              )
+            }
+            const Icon = item.icon
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) =>
+                  `flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                    isActive ? 'text-primary' : 'text-stone'
+                  }`
+                }
+              >
+                <Icon className="w-5 h-5" />
+                {item.label}
+              </NavLink>
+            )
+          })}
         </div>
       </nav>
     </div>

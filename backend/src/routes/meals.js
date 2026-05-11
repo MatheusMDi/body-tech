@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { supabase } from '../config/supabase.js'
+import { checkAndUnlockAchievements } from '../services/achievementService.js'
 
 const router = Router()
 
@@ -44,6 +45,9 @@ router.post('/', async (req, res) => {
   // Update daily record totals
   const today = new Date().toISOString().split('T')[0]
   await updateDailyTotals(userId, today)
+
+  // Check achievements in background (non-blocking)
+  checkAndUnlockAchievements(userId).catch(() => {})
 
   res.json(meal)
 })

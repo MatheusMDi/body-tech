@@ -9,6 +9,7 @@ import progressRouter from './src/routes/progress.js'
 import checklistRouter from './src/routes/checklist.js'
 import { startReminderJobs } from './src/jobs/reminders.js'
 import { startWeeklyReportJob } from './src/jobs/weeklyReport.js'
+import { startSmartNotificationJobs } from './src/jobs/smartNotifications.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -48,6 +49,7 @@ app.use('/checklist', requireAuth, checklistRouter)
 // Start cron jobs
 startReminderJobs()
 startWeeklyReportJob()
+startSmartNotificationJobs()
 
 app.listen(PORT, () => {
   console.log(`[server] Body Tech backend running on port ${PORT}`)

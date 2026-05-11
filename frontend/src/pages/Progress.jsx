@@ -1,104 +1,64 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { useDashboard } from '../hooks/useDashboard.js'
+import { useSleep } from '../hooks/useSleep.js'
 import { ProteinWaterChart, BodyMetricsChart } from '../components/ComplianceChart.jsx'
+import AchievementsGrid from '../components/AchievementsGrid.jsx'
+import { SleepBarChart } from '../components/SleepChart.jsx'
 import { todayDateString } from '../lib/utils.js'
 import { PROTOCOL } from '../lib/constants.js'
 
 const PERIOD_OPTIONS = [7, 30, 60, 90]
 
-function StatCard({ label, value, sub, color = 'primary' }) {
-  const textColor = color === 'primary' ? 'text-primary' : color === 'error' ? 'text-error' : color === 'warning' ? 'text-warning' : 'text-on-dark'
+function StatCard({ label, value, sub, color }) {
+  const textColor = {
+    primary: 'text-primary',
+    error: 'text-error',
+    warning: 'text-warning',
+    default: 'text-theme',
+  }[color ?? 'primary']
+
   return (
-    <div className="card-dark border border-hairline-strong rounded-sm p-4 relative overflow-hidden">
+    <div
+      className="rounded-sm p-4 relative overflow-hidden border"
+      style={{ backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)' }}
+    >
       <div className="corner-square bottom-0 right-0" />
       <div className={`text-[28px] font-bold leading-[1] ${textColor} mb-1`}>{value}</div>
-      <div className="text-[11px] font-bold uppercase tracking-wide text-mute">{label}</div>
-      {sub && <div className="text-[11px] text-stone mt-0.5">{sub}</div>}
+      <div className="text-[11px] font-bold uppercase tracking-wide text-theme-faint">{label}</div>
+      {sub && <div className="text-[11px] text-theme-faint mt-0.5">{sub}</div>}
     </div>
   )
 }
 
 function FlagRow({ label, emoji, count, total, color }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0
-  const textColor = color === 'error' ? 'text-error' : color === 'warning' ? 'text-warning' : 'text-on-dark'
-
+  const textColor = color === 'error' ? 'text-error' : color === 'warning' ? 'text-warning' : 'text-theme'
   return (
-    <div className="flex items-center justify-between py-3 border-b border-hairline-strong last:border-0">
+    <div className="flex items-center justify-between py-3 border-b last:border-0" style={{ borderColor: 'var(--theme-border)' }}>
       <div className="flex items-center gap-2">
         <span className="text-[16px]">{emoji}</span>
-        <span className="text-[14px] text-on-dark">{label}</span>
+        <span className="text-[14px] text-theme">{label}</span>
       </div>
       <div className="text-right">
         <span className={`text-[14px] font-bold ${textColor}`}>{count}x</span>
-        <span className="text-[12px] text-mute ml-1">em {total} dias ({pct}%)</span>
+        <span className="text-[12px] text-theme-faint ml-1">em {total} dias ({pct}%)</span>
       </div>
     </div>
   )
 }
 
-function BodyMetricsInput({ userId, onSaved }) {
-  const [weight, setWeight] = useState('')
-  const [waist, setWaist] = useState('')
-  const [saving, setSaving] = useState(false)
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setSaving(true)
-    await supabase.from('body_metrics').insert({
-      user_id: userId,
-      measured_at: todayDateString(),
-      weight_kg: parseFloat(weight) || null,
-      waist_cm: parseFloat(waist) || null,
-    })
-    setSaving(false)
-    setWeight('')
-    setWaist('')
-    onSaved?.()
-  }
-
+function SectionCard({ title, children }) {
   return (
-    <form onSubmit={handleSubmit} className="card-dark border border-hairline-strong rounded-sm p-5 relative overflow-hidden">
-      <div className="corner-square top-0 left-0" />
-      <div className="text-[11px] font-bold uppercase tracking-widest text-mute mb-4">
-        Medidas Semanais
+    <div
+      className="rounded-sm overflow-hidden border relative"
+      style={{ backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)' }}
+    >
+      <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--theme-border)' }}>
+        <div className="text-[11px] font-bold uppercase tracking-widest text-theme-faint">{title}</div>
       </div>
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wide text-mute mb-2">
-            Peso (kg)
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            min="50"
-            max="200"
-            value={weight}
-            onChange={e => setWeight(e.target.value)}
-            placeholder={`${PROTOCOL.WEIGHT_GOAL_KG}`}
-            className="input-field bg-surface-elevated text-on-dark border-hairline-strong placeholder-stone"
-          />
-        </div>
-        <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wide text-mute mb-2">
-            Cintura (cm)
-          </label>
-          <input
-            type="number"
-            step="0.5"
-            min="50"
-            max="200"
-            value={waist}
-            onChange={e => setWaist(e.target.value)}
-            placeholder="88"
-            className="input-field bg-surface-elevated text-on-dark border-hairline-strong placeholder-stone"
-          />
-        </div>
-      </div>
-      <button type="submit" disabled={saving} className="btn-primary w-full">
-        {saving ? 'Salvando...' : 'Salvar Medidas'}
-      </button>
-    </form>
+      <div className="p-4">{children}</div>
+    </div>
   )
 }
 
@@ -106,6 +66,7 @@ export default function Progress({ user }) {
   const [period, setPeriod] = useState(30)
   const [metrics, setMetrics] = useState([])
   const { data, loading, refresh } = useDashboard(user?.id, period)
+  const { history: sleepHistory } = useSleep(user?.id, todayDateString())
 
   useEffect(() => {
     if (!user?.id) return
@@ -115,8 +76,14 @@ export default function Progress({ user }) {
       .eq('user_id', user.id)
       .order('measured_at', { ascending: true })
       .limit(90)
-      .then(({ data }) => data && setMetrics(data))
+      .then(({ data: d }) => d && setMetrics(d))
   }, [user?.id])
+
+  // Body progress summary
+  const firstWeight = metrics[0]?.weight_kg
+  const lastWeight = metrics[metrics.length - 1]?.weight_kg
+  const weightLost = firstWeight && lastWeight ? (firstWeight - lastWeight).toFixed(1) : null
+  const toGoal = lastWeight ? (lastWeight - PROTOCOL.WEIGHT_GOAL_KG).toFixed(1) : null
 
   return (
     <div className="space-y-5">
@@ -124,8 +91,8 @@ export default function Progress({ user }) {
       <div className="relative">
         <div className="absolute top-0 left-0 w-3 h-3 bg-primary" />
         <div className="pl-5">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-mute mb-1">Dashboard</div>
-          <h1 className="text-[24px] font-bold text-on-dark">Progresso</h1>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-theme-faint mb-1">Dashboard</div>
+          <h1 className="text-[24px] font-bold text-theme">Progresso</h1>
         </div>
       </div>
 
@@ -135,11 +102,12 @@ export default function Progress({ user }) {
           <button
             key={d}
             onClick={() => setPeriod(d)}
-            className={`flex-1 py-2 text-[11px] font-bold uppercase tracking-wide rounded-sm border transition-colors ${
-              period === d
-                ? 'bg-ink text-on-dark border-ink'
-                : 'bg-transparent text-stone border-hairline-strong'
-            }`}
+            className="flex-1 py-2 text-[11px] font-bold uppercase tracking-wide rounded-sm border transition-colors"
+            style={{
+              backgroundColor: period === d ? 'var(--theme-text)' : 'transparent',
+              color: period === d ? 'var(--theme-bg)' : 'var(--theme-text-faint)',
+              borderColor: 'var(--theme-border)',
+            }}
           >
             {d}d
           </button>
@@ -147,7 +115,7 @@ export default function Progress({ user }) {
       </div>
 
       {loading ? (
-        <div className="text-center py-10 text-stone text-[14px]">Carregando...</div>
+        <div className="text-center py-10 text-theme-faint text-[14px]">Carregando...</div>
       ) : data ? (
         <>
           {/* Streaks */}
@@ -157,63 +125,70 @@ export default function Progress({ user }) {
           </div>
 
           {/* Compliance grid */}
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-widest text-mute mb-3">Compliance</div>
+          <SectionCard title="Compliance">
             <div className="grid grid-cols-2 gap-3">
               <StatCard label="Jejum" value={`${data.compliance.jejum}%`} sub={`${period} dias`} color="primary" />
               <StatCard label="Proteína" value={`${data.compliance.proteina}%`} sub={`meta ${PROTOCOL.PROTEIN_GOAL_G}g`} color="primary" />
               <StatCard label="Água" value={`${data.compliance.agua}%`} sub={`meta ${PROTOCOL.WATER_GOAL_ML / 1000}L`} color="primary" />
               <StatCard label="Treino" value={`${data.compliance.treino}%`} sub="CrossFit" color="primary" />
             </div>
-          </div>
+          </SectionCard>
 
-          {/* Protein/water chart */}
+          {/* Protein chart */}
           {data.records?.length > 0 && (
-            <div className="card-dark border border-hairline-strong rounded-sm p-4 relative overflow-hidden">
-              <div className="corner-square top-0 right-0" />
-              <div className="text-[11px] font-bold uppercase tracking-widest text-mute mb-3">Proteína Diária (g)</div>
+            <SectionCard title="Proteína Diária (g)">
               <ProteinWaterChart records={data.records} />
-            </div>
+            </SectionCard>
           )}
 
           {/* Flag summary */}
-          <div className="card-dark border border-hairline-strong rounded-sm overflow-hidden relative">
-            <div className="px-5 py-4 border-b border-hairline-strong">
-              <div className="text-[11px] font-bold uppercase tracking-widest text-mute">Flags Negativas</div>
-            </div>
-            <div className="px-5 py-2">
-              <FlagRow label="Álcool" emoji="🚨" count={data.flags.alcool.count} total={data.flags.alcool.total} color="error" />
-              <FlagRow label="Açúcar" emoji="🍬" count={data.flags.acucar.count} total={data.flags.acucar.total} color="error" />
-              <FlagRow label="Jejum quebrado" emoji="⚠️" count={data.flags.jejumQuebrado.count} total={data.flags.jejumQuebrado.total} color="warning" />
-              <FlagRow label="Sono ruim" emoji="😴" count={data.flags.sonoRuim.count} total={data.flags.sonoRuim.total} color="warning" />
-              <FlagRow label="Creatina esquecida" emoji="💊" count={data.flags.creatina.count} total={data.flags.creatina.total} color="warning" />
-              <FlagRow label="ZMA esquecido" emoji="💊" count={data.flags.zma.count} total={data.flags.zma.total} color="warning" />
-            </div>
-          </div>
+          <SectionCard title="Flags Negativas">
+            <FlagRow label="Álcool" emoji="🚨" count={data.flags.alcool.count} total={data.flags.alcool.total} color="error" />
+            <FlagRow label="Açúcar" emoji="🍬" count={data.flags.acucar.count} total={data.flags.acucar.total} color="error" />
+            <FlagRow label="Jejum quebrado" emoji="⚠️" count={data.flags.jejumQuebrado.count} total={data.flags.jejumQuebrado.total} color="warning" />
+            <FlagRow label="Sono ruim" emoji="😴" count={data.flags.sonoRuim.count} total={data.flags.sonoRuim.total} color="warning" />
+            <FlagRow label="Creatina esquecida" emoji="💊" count={data.flags.creatina.count} total={data.flags.creatina.total} color="warning" />
+            <FlagRow label="ZMA esquecido" emoji="💊" count={data.flags.zma.count} total={data.flags.zma.total} color="warning" />
+          </SectionCard>
         </>
       ) : null}
 
-      {/* Body metrics chart */}
-      {metrics.length > 0 && (
-        <div className="card-dark border border-hairline-strong rounded-sm p-4 relative overflow-hidden">
-          <div className="corner-square top-0 left-0" />
-          <div className="text-[11px] font-bold uppercase tracking-widest text-mute mb-3">
-            Evolução Corporal
-          </div>
-          <BodyMetricsChart metrics={metrics} weightGoal={PROTOCOL.WEIGHT_GOAL_KG} />
+      {/* Body progress summary */}
+      {metrics.length >= 2 && (
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            label="Perdidos"
+            value={weightLost !== null ? `${parseFloat(weightLost) > 0 ? '▼' : '▲'} ${Math.abs(weightLost)}kg` : '—'}
+            sub="vs início"
+            color={parseFloat(weightLost) > 0 ? 'primary' : 'error'}
+          />
+          <StatCard
+            label="Para a meta"
+            value={toGoal !== null && parseFloat(toGoal) > 0 ? `${toGoal}kg` : '🎯 Meta'}
+            sub={`meta ${PROTOCOL.WEIGHT_GOAL_KG}kg`}
+            color={parseFloat(toGoal) <= 0 ? 'primary' : 'default'}
+          />
         </div>
       )}
 
-      {/* Body metrics input */}
-      <BodyMetricsInput userId={user?.id} onSaved={() => {
-        supabase
-          .from('body_metrics')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('measured_at', { ascending: true })
-          .limit(90)
-          .then(({ data: d }) => d && setMetrics(d))
-      }} />
+      {/* Body metrics chart */}
+      {metrics.length > 0 && (
+        <SectionCard title="Evolução Corporal">
+          <BodyMetricsChart metrics={metrics} weightGoal={PROTOCOL.WEIGHT_GOAL_KG} />
+        </SectionCard>
+      )}
+
+      {/* Sleep chart */}
+      {sleepHistory.length > 1 && (
+        <SectionCard title="Sono — Últimas Noites">
+          <SleepBarChart history={sleepHistory} />
+        </SectionCard>
+      )}
+
+      {/* Achievements */}
+      <SectionCard title="Conquistas">
+        <AchievementsGrid />
+      </SectionCard>
     </div>
   )
 }

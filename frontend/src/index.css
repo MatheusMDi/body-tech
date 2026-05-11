@@ -2,20 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   CSS THEME VARIABLES
+   Dark mode is default. Light mode overrides via html.light.
+   ============================================================ */
+:root {
+  --theme-bg: #000000;
+  --theme-surface: #1a1a1a;
+  --theme-surface-soft: #111111;
+  --theme-border: #5e5e5e;
+  --theme-border-subtle: #333333;
+  --theme-text: #ffffff;
+  --theme-text-muted: rgba(255,255,255,0.7);
+  --theme-text-faint: #898989;
+  --theme-input-bg: #1a1a1a;
+  --theme-input-border: #5e5e5e;
+}
+
+html.light {
+  --theme-bg: #F8F9FA;
+  --theme-surface: #FFFFFF;
+  --theme-surface-soft: #F1F3F5;
+  --theme-border: #E5E7EB;
+  --theme-border-subtle: #D1D5DB;
+  --theme-text: #1A1A2E;
+  --theme-text-muted: #6B7280;
+  --theme-text-faint: #9CA3AF;
+  --theme-input-bg: #FFFFFF;
+  --theme-input-border: #D1D5DB;
+}
+
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   html, body {
     margin: 0;
     padding: 0;
     min-height: 100%;
-    background-color: #000000;
-    color: #ffffff;
+    background-color: var(--theme-bg);
+    color: var(--theme-text);
     font-family: 'Inter', Arial, Helvetica, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   #root {
@@ -47,11 +76,16 @@
   }
 
   .card-dark {
-    @apply bg-surface-dark border border-hairline-strong rounded-sm;
+    background-color: var(--theme-surface);
+    border: 1px solid var(--theme-border);
+    border-radius: 2px;
   }
 
   .input-field {
-    @apply bg-canvas text-ink border border-hairline rounded-sm px-4 py-3 h-11 text-[16px] w-full outline-none transition-colors focus:border-2 focus:border-primary;
+    background-color: var(--theme-input-bg);
+    color: var(--theme-text);
+    border: 1px solid var(--theme-input-border);
+    @apply rounded-sm px-4 py-3 h-11 text-[16px] w-full outline-none transition-colors focus:border-2 focus:border-primary;
   }
 
   .corner-square {
@@ -63,29 +97,56 @@
   }
 
   .section-title {
-    @apply text-[24px] font-bold leading-[1.25] text-on-dark;
+    @apply text-[24px] font-bold leading-[1.25];
+    color: var(--theme-text);
   }
+
+  /* Theme-aware text helpers */
+  .text-theme { color: var(--theme-text); }
+  .text-theme-muted { color: var(--theme-text-muted); }
+  .text-theme-faint { color: var(--theme-text-faint); }
+  .bg-theme { background-color: var(--theme-bg); }
+  .bg-theme-surface { background-color: var(--theme-surface); }
+  .bg-theme-surface-soft { background-color: var(--theme-surface-soft); }
+  .border-theme { border-color: var(--theme-border); }
 }
 
-/* Safe area for mobile devices */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+/* Safe area for mobile */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--theme-bg); }
+::-webkit-scrollbar-thumb { background: var(--theme-border); border-radius: 2px; }
+
+/* Animations */
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.pt-safe {
-  padding-top: env(safe-area-inset-top, 0px);
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 4px;
+@keyframes scale-up {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
-::-webkit-scrollbar-track {
-  background: #000000;
+.animate-slide-down { animation: slide-down 0.2s ease forwards; }
+.animate-fade-in    { animation: fade-in 0.15s ease forwards; }
+.animate-scale-up   { animation: scale-up 0.15s ease forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-down,
+  .animate-fade-in,
+  .animate-scale-up { animation: none; }
 }
 
-::-webkit-scrollbar-thumb {
-  background: #5e5e5e;
-  border-radius: 2px;
-}
+/* FAB menu items stagger */
+.fab-item { transition: opacity 0.15s ease, transform 0.15s ease; }
+.fab-item-enter { opacity: 0; transform: scale(0.8) translateY(8px); }
+.fab-item-active { opacity: 1; transform: scale(1) translateY(0); }

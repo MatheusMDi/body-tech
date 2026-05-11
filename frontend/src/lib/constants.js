@@ -63,3 +63,58 @@ export const COLORS = {
   SUCCESS: '#3f8500',
   MUTE: '#757575',
 }
+
+export const ACHIEVEMENTS = {
+  PRIMEIRA_SEMANA: {
+    key: 'PRIMEIRA_SEMANA', label: 'Primeira Semana', emoji: '🔥',
+    description: '7 dias consecutivos de jejum', category: 'jejum', target: 7,
+  },
+  MES_SOLIDO: {
+    key: 'MES_SOLIDO', label: 'Mês Sólido', emoji: '💪',
+    description: '30 dias consecutivos de jejum', category: 'jejum', target: 30,
+  },
+  PROTOCOLO_ELITE: {
+    key: 'PROTOCOLO_ELITE', label: 'Protocolo Elite', emoji: '🏆',
+    description: '60 dias consecutivos de jejum', category: 'jejum', target: 60,
+  },
+  META_BATIDA: {
+    key: 'META_BATIDA', label: 'Meta Batida', emoji: '🥩',
+    description: 'Primeiro dia com 160g+ de proteína', category: 'proteina', target: 1,
+  },
+  CONSISTENCIA_PROTEINA: {
+    key: 'CONSISTENCIA_PROTEINA', label: 'Consistência', emoji: '🥩',
+    description: '14 dias seguidos na meta de proteína', category: 'proteina', target: 14,
+  },
+  MAQUINA_PROTEINA: {
+    key: 'MAQUINA_PROTEINA', label: 'Máquina', emoji: '🥩',
+    description: '30 dias seguidos na meta de proteína', category: 'proteina', target: 30,
+  },
+  SEMANA_LIMPA: {
+    key: 'SEMANA_LIMPA', label: 'Semana Limpa', emoji: '🚫',
+    description: '7 dias sem álcool e sem açúcar', category: 'clean', target: 7,
+  },
+  MES_LIMPO: {
+    key: 'MES_LIMPO', label: 'Mês Limpo', emoji: '🚫',
+    description: '30 dias sem álcool e sem açúcar', category: 'clean', target: 30,
+  },
+  PRIMEIRO_KG: {
+    key: 'PRIMEIRO_KG', label: 'Primeiro Kg', emoji: '📉',
+    description: 'Perdeu 1kg vs peso inicial', category: 'peso', target: 1,
+  },
+  CINCO_KG: {
+    key: 'CINCO_KG', label: 'Cinco Kg', emoji: '📉',
+    description: 'Perdeu 5kg vs peso inicial', category: 'peso', target: 5,
+  },
+  DEZ_KG: {
+    key: 'DEZ_KG', label: 'Dez Kg', emoji: '📉',
+    description: 'Perdeu 10kg vs peso inicial', category: 'peso', target: 10,
+  },
+  ATLETA: {
+    key: 'ATLETA', label: 'Atleta', emoji: '🏋️',
+    description: '20 treinos registrados', category: 'treino', target: 20,
+  },
+  DEDICADO: {
+    key: 'DEDICADO', label: 'Dedicado', emoji: '🏋️',
+    description: '50 treinos registrados', category: 'treino', target: 50,
+  },
+}
