@@ -121,6 +121,127 @@ export function startReminderJobs() {
     await flagMissingSupplements()
   }, { timezone: TIMEZONE })
 
+  // ── Adaptive hydration reminders — every hour ─────────────
+  const lastHydrationMessage = new Map() // userId -> last message index
+
+  const HYDRATION_MESSAGES = {
+    yellow: [
+      '💧 Você está um pouco atrás na hidratação hoje',
+      '💧 Lembre de beber água ao longo do dia',
+      '💧 Hydratação em dia é fundamental',
+    ],
+    orange: [
+      '💧 Meta de água: faltam {remaining}L para hoje',
+      '⚠️ Menos da metade da meta de água — beba agora',
+      '💧 Atenção à hidratação — você está abaixo do ritmo',
+    ],
+    red: [
+      '🚨 Só algumas horas para fechar o dia — {remaining}L ainda faltando',
+      '🚨 Hidratação crítica — beba água agora',
+      '🚨 Meta de água longe de ser atingida hoje',
+    ],
+  }
+
+  function pickHydrationMessage(level, userId, remaining) {
+    const messages = HYDRATION_MESSAGES[level]
+    const lastIdx = lastHydrationMessage.get(userId) ?? -1
+    const nextIdx = (lastIdx + 1) % messages.length
+    lastHydrationMessage.set(userId, nextIdx)
+    return messages[nextIdx].replace('{remaining}', remaining.toFixed(1))
+  }
+
+  cron.schedule('0 * * * *', async () => {
+    const { data: users, error } = await supabase
+      .from('profiles')
+      .select('id, water_goal_ml, training_time, trains, notifications_enabled, notification_preferences')
+
+    if (error || !users?.length) return
+
+    const today = new Date().toISOString().slice(0, 10)
+    const nowHour = new Date().getHours()
+
+    for (const user of users) {
+      if (user.notifications_enabled === false) continue
+
+      const prefs = user.notification_preferences ?? {}
+      const prefOn = (key) => prefs[key] !== false
+
+      const userId = user.id
+      const goalMl = user.water_goal_ml ?? 3000
+
+      // Get today's water intake
+      const { data: waterRows } = await supabase
+        .from('meals')
+        .select('water_ml')
+        .eq('user_id', userId)
+        .eq('meal_date', today)
+        .eq('is_water', true)
+
+      const intakeMl = (waterRows ?? []).reduce((sum, r) => sum + (r.water_ml ?? 0), 0)
+
+      // Calculate urgency
+      const dayFraction = Math.max(nowHour / 24, 0.01)
+      const expectedFraction = dayFraction
+      const actualFraction = intakeMl / goalMl
+      const ratio = actualFraction / expectedFraction // 1.0 = perfectly on track
+
+      let urgencyLevel = null
+      if (ratio < 0.3) urgencyLevel = 'red'
+      else if (ratio < 0.5) urgencyLevel = 'orange'
+      else if (ratio < 0.8) urgencyLevel = 'yellow'
+      // >= 0.8 = green, no reminder
+
+      if (urgencyLevel && prefOn('hydration')) {
+        const remainingL = Math.max((goalMl - intakeMl) / 1000, 0)
+        const msg = pickHydrationMessage(urgencyLevel, userId, remainingL)
+        await sendPushToUser(userId, 'Hidratação', msg)
+      }
+
+      // Pre-training hydration reminder — 30min before training_time
+      if (user.trains && user.training_time && prefOn('hydration')) {
+        const trainHHMM = user.training_time.slice(0, 5)
+        const reminderHHMM = subtractMinutes(trainHHMM, 30)
+        const currentHHMM = `${String(nowHour).padStart(2, '0')}:00`
+        if (currentHHMM === reminderHHMM.slice(0, 3) + '00') {
+          await sendPushToUser(userId, 'Treino', '🏋️ Treino em 30min — hidrate-se agora')
+        }
+      }
+    }
+  }, { timezone: TIMEZONE })
+
+  // ── Daily PR summary — 11:59 PM ───────────────────────────
+  cron.schedule('59 23 * * *', async () => {
+    const today = new Date().toISOString().slice(0, 10)
+
+    const { data: records, error } = await supabase
+      .from('personal_records')
+      .select('user_id, exercise_name')
+      .eq('achieved_at', today)
+
+    if (error || !records?.length) return
+
+    // Group by user
+    const byUser = {}
+    for (const r of records) {
+      if (!byUser[r.user_id]) byUser[r.user_id] = []
+      byUser[r.user_id].push(r.exercise_name)
+    }
+
+    for (const [userId, exercises] of Object.entries(byUser)) {
+      // Check notifications enabled
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('notifications_enabled')
+        .eq('id', userId)
+        .single()
+
+      if (profile?.notifications_enabled === false) continue
+
+      const names = [...new Set(exercises)].join(', ')
+      await sendPushToUser(userId, 'Body Tech', `🏆 Novos PRs hoje: ${names}`)
+    }
+  }, { timezone: TIMEZONE })
+
   console.log('[cron] Per-user dynamic reminder jobs started')
 }
 

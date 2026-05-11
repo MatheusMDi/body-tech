@@ -1,16 +1,31 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase.js'
 
-const ModuleContext = createContext(null)
+export const ModuleContext = createContext(null)
 
-const DEFAULT_ACTIVE_MODULES = ['fasting', 'nutrition', 'sleep', 'water', 'workout', 'weight', 'supplements', 'rules', 'score']
+// All available modules in the application
+export const ALL_MODULES = [
+  'hydration',
+  'nutrition',
+  'sleep',
+  'measurements',
+  'habits',
+  'fasting',
+  'workout',
+  'cycles',
+]
+
+const DEFAULT_MODULES = ['hydration', 'nutrition', 'sleep', 'measurements', 'habits']
 
 export function ModuleProvider({ userId, children }) {
-  const [activeModules, setActiveModules] = useState(DEFAULT_ACTIVE_MODULES)
+  const [activeModules, setActiveModules] = useState(DEFAULT_MODULES)
   const [loading, setLoading] = useState(true)
 
-  const fetch = useCallback(async () => {
-    if (!userId) { setLoading(false); return }
+  const loadModules = useCallback(async () => {
+    if (!userId) {
+      setLoading(false)
+      return
+    }
     const { data } = await supabase
       .from('profiles')
       .select('active_modules')
@@ -22,15 +37,48 @@ export function ModuleProvider({ userId, children }) {
     setLoading(false)
   }, [userId])
 
-  useEffect(() => { fetch() }, [fetch])
+  useEffect(() => {
+    loadModules()
+  }, [loadModules])
 
-  function isModuleActive(moduleId) {
-    if (!moduleId) return true
-    return activeModules.includes(moduleId)
-  }
+  const isModuleActive = useCallback(
+    (moduleId) => {
+      if (!moduleId) return true
+      return activeModules.includes(moduleId)
+    },
+    [activeModules],
+  )
+
+  const toggleModule = useCallback(
+    async (moduleId) => {
+      if (!ALL_MODULES.includes(moduleId)) return
+
+      const next = activeModules.includes(moduleId)
+        ? activeModules.filter((m) => m !== moduleId)
+        : [...activeModules, moduleId]
+
+      setActiveModules(next)
+
+      if (userId) {
+        await supabase
+          .from('profiles')
+          .update({ active_modules: next })
+          .eq('id', userId)
+      }
+    },
+    [activeModules, userId],
+  )
 
   return (
-    <ModuleContext.Provider value={{ activeModules, isModuleActive, loading, refresh: fetch }}>
+    <ModuleContext.Provider
+      value={{
+        activeModules,
+        isModuleActive,
+        toggleModule,
+        loading,
+        refresh: loadModules,
+      }}
+    >
       {children}
     </ModuleContext.Provider>
   )
@@ -38,13 +86,6 @@ export function ModuleProvider({ userId, children }) {
 
 export function useModules() {
   const ctx = useContext(ModuleContext)
-  if (!ctx) {
-    // Graceful fallback when not wrapped in provider
-    return {
-      activeModules: DEFAULT_ACTIVE_MODULES,
-      isModuleActive: () => true,
-      loading: false,
-    }
-  }
+  if (!ctx) throw new Error('useModules must be used within ModuleProvider')
   return ctx
 }
