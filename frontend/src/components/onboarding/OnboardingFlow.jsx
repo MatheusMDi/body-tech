@@ -35,6 +35,7 @@ export default function OnboardingFlow({ user }) {
     active_supplements: profile?.active_supplements ?? [],
     notifications_enabled: profile?.notifications_enabled ?? true,
     notification_preferences: profile?.notification_preferences ?? {},
+    focus_goals: profile?.focus_goals ?? [],
   })
 
   function mergeData(partial) {
@@ -93,7 +94,7 @@ export default function OnboardingFlow({ user }) {
 
       {/* Step content */}
       <div className="flex-1 flex flex-col px-6 py-6 max-w-md mx-auto w-full">
-        {step === 1 && <OnboardingStep1 onNext={() => goNext()} />}
+        {step === 1 && <OnboardingStep1 onNext={(partial = {}) => goNext(partial)} />}
         {step === 2 && <OnboardingStep2 {...stepProps} />}
         {step === 3 && <OnboardingStep3 {...stepProps} />}
         {step === 4 && <OnboardingStep4 {...stepProps} />}

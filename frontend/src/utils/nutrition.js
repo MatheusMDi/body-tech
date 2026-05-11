@@ -1,124 +1,134 @@
-/**
- * Nutrition calculation utilities.
- * All weight in kg, height in cm, age in years.
- */
+// ─── Nutrition Calculation Utilities ─────────────────────────────────────────
+// Pure functions — no side effects.
+
+import { ACTIVITY_LEVELS, CYCLE_TYPES, MACRO_FORMULAS } from '../constants/cyclePresets.js'
 
 /**
  * Mifflin-St Jeor BMR formula.
- * sex: 'male' | 'female'
+ * Male:   (10 * w) + (6.25 * h) - (5 * a) + 5
+ * Female: (10 * w) + (6.25 * h) - (5 * a) - 161
+ *
+ * @param {number} weightKg
+ * @param {number} heightCm
+ * @param {number} age
+ * @param {'male'|'female'|string} sex
+ * @returns {number} BMR in kcal/day
  */
-export function calculateBMR({ weight_kg, height_cm, age, sex }) {
-  const w = parseFloat(weight_kg) || 70
-  const h = parseFloat(height_cm) || 170
+export function calculateBMR(weightKg, heightCm, age, sex) {
+  const w = parseFloat(weightKg) || 70
+  const h = parseFloat(heightCm) || 170
   const a = parseFloat(age) || 30
-  if (sex === 'female') {
-    return 10 * w + 6.25 * h - 5 * a - 161
-  }
-  // male (default)
-  return 10 * w + 6.25 * h - 5 * a + 5
+  const base = 10 * w + 6.25 * h - 5 * a
+  return sex === 'female' ? base - 161 : base + 5
 }
 
 /**
- * TDEE = BMR × activity multiplier.
- * activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
+ * Total Daily Energy Expenditure = BMR * activity multiplier.
+ *
+ * @param {number} bmr
+ * @param {string} activityLevel  - key from ACTIVITY_LEVELS
+ * @returns {number} TDEE in kcal/day
  */
-const ACTIVITY_MULTIPLIERS = {
-  sedentary:   1.2,
-  light:       1.375,
-  moderate:    1.55,
-  active:      1.725,
-  very_active: 1.9,
-}
-
-export function calculateTDEE({ weight_kg, height_cm, age, sex, activityLevel = 'moderate' }) {
-  const bmr = calculateBMR({ weight_kg, height_cm, age, sex })
-  const multiplier = ACTIVITY_MULTIPLIERS[activityLevel] ?? 1.55
+export function calculateTDEE(bmr, activityLevel) {
+  const level = ACTIVITY_LEVELS[activityLevel]
+  const multiplier = level ? level.multiplier : 1.55 // fallback: moderate
   return Math.round(bmr * multiplier)
 }
 
 /**
- * Adjust TDEE based on cycle type to get daily calorie target.
+ * Target daily calories for a given cycle type.
+ *
+ * @param {number} tdee
+ * @param {string} cycleType  - key from CYCLE_TYPES
+ * @returns {number} target calories in kcal/day
  */
-const CALORIE_ADJUSTMENTS = {
-  cutting:          -500,
-  bulking:           400,
-  maintenance:         0,
-  recomp:           -150,
-  peaking:          -200,
-  deload:              0,
-  fasting_protocol: -300,
-  strength_focus:    200,
-  cardio_focus:     -200,
-  custom:              0,
-}
-
 export function calculateTargetCalories(tdee, cycleType) {
-  const adjustment = CALORIE_ADJUSTMENTS[cycleType] ?? 0
-  return Math.max(1200, tdee + adjustment)
+  const cycle = CYCLE_TYPES[cycleType]
+  const adjustment = cycle ? cycle.calorieAdjust : 0
+  return Math.round(tdee + adjustment)
 }
 
 /**
- * Macro splits (protein g/kg, then fill with carbs/fat).
- * Returns { proteinG, carbG, fatG, totalKcal }
+ * Calculate macro breakdown in grams and percentages.
+ *
+ * Rules:
+ *  - Cut: protein 2.2g/kg, fat 0.8g/kg, carbs = remainder
+ *  - Cut Aggressive: protein 2.4g/kg, fat 0.7g/kg, carbs = remainder
+ *  - Bulk: protein 1.8g/kg, carbs 50% kcal, fat = remainder
+ *  - Bulk Lean / Strength: protein 2.0g/kg, carbs 45% kcal, fat = remainder
+ *  - Default (maintenance/recomp/etc): protein 2.0g/kg, fat 0.9g/kg, carbs = remainder
+ *
+ * @param {number} targetCalories
+ * @param {number} weightKg
+ * @param {string} cycleType
+ * @returns {{ proteinG: number, carbG: number, fatG: number,
+ *             proteinKcal: number, carbKcal: number, fatKcal: number,
+ *             proteinPct: number, carbPct: number, fatPct: number }}
  */
-const PROTEIN_PER_KG = {
-  cutting:          2.2,
-  bulking:          1.8,
-  maintenance:      1.6,
-  recomp:           2.4,
-  peaking:          2.2,
-  deload:           1.6,
-  fasting_protocol: 1.8,
-  strength_focus:   2.0,
-  cardio_focus:     1.8,
-  custom:           1.8,
-}
+export function calculateMacros(targetCalories, weightKg, cycleType) {
+  const w = parseFloat(weightKg) || 70
+  const formula = MACRO_FORMULAS[cycleType] || MACRO_FORMULAS['maintenance']
 
-export function calculateMacros({ targetCalories, weight_kg, cycleType }) {
-  const w = parseFloat(weight_kg) || 70
-  const proteinPerKg = PROTEIN_PER_KG[cycleType] ?? 1.8
-
-  const proteinG = Math.round(w * proteinPerKg)
+  const proteinG = Math.round(formula.protein_g_per_kg * w)
   const proteinKcal = proteinG * 4
 
-  // Fat: ~25% of target calories
-  const fatKcal = Math.round(targetCalories * 0.25)
-  const fatG = Math.round(fatKcal / 9)
+  let carbG, carbKcal, fatG, fatKcal
 
-  // Carbs: remainder
-  const carbKcal = Math.max(0, targetCalories - proteinKcal - fatKcal)
-  const carbG = Math.round(carbKcal / 4)
+  if (formula.carb_fill) {
+    // Protein + fat fixed by g/kg; carbs fill remainder
+    fatG = Math.round((formula.fat_g_per_kg || 0.9) * w)
+    fatKcal = fatG * 9
+    carbKcal = Math.max(0, targetCalories - proteinKcal - fatKcal)
+    carbG = Math.round(carbKcal / 4)
+  } else {
+    // Carbs fixed as percentage of total kcal; fat fills remainder
+    carbKcal = Math.round(((formula.carb_pct || 45) / 100) * targetCalories)
+    carbG = Math.round(carbKcal / 4)
+    fatKcal = Math.max(0, targetCalories - proteinKcal - carbKcal)
+    fatG = Math.round(fatKcal / 9)
+  }
 
-  return { proteinG, carbG, fatG, totalKcal: targetCalories }
+  const actualProteinKcal = proteinG * 4
+  const actualCarbKcal = carbG * 4
+  const actualFatKcal = fatG * 9
+  const totalKcal = actualProteinKcal + actualCarbKcal + actualFatKcal || 1
+
+  return {
+    proteinG,
+    carbG,
+    fatG,
+    proteinKcal: actualProteinKcal,
+    carbKcal: actualCarbKcal,
+    fatKcal: actualFatKcal,
+    proteinPct: Math.round((actualProteinKcal / totalKcal) * 100),
+    carbPct: Math.round((actualCarbKcal / totalKcal) * 100),
+    fatPct: Math.round((actualFatKcal / totalKcal) * 100),
+  }
 }
 
 /**
- * Convenience: run the full pipeline and return everything.
+ * Full nutrition plan calculation in one call.
+ *
+ * @param {object} profile  - must include: weight_goal (kg), height_cm, age, sex, activity_level
+ * @param {string} cycleType
+ * @returns {{ bmr: number, tdee: number, targetCalories: number, macros: object }}
  */
-export function calculateNutritionPlan({ profile, cycleType, activityLevel = 'moderate' }) {
-  const tdee = calculateTDEE({
-    weight_kg:  profile?.weight_kg  ?? profile?.current_weight_kg ?? 70,
-    height_cm:  profile?.height_cm  ?? 170,
-    age:        profile?.age        ?? 30,
-    sex:        profile?.sex        ?? 'male',
-    activityLevel,
-  })
+export function calculateNutritionPlan(profile, cycleType) {
+  const weightKg = parseFloat(profile?.weight_goal || profile?.weight_kg) || 70
+  const heightCm = parseFloat(profile?.height_cm) || 170
+  const age = parseFloat(profile?.age) || 30
+  const sex = profile?.sex || 'male'
+  const activityLevel = profile?.activity_level || 'moderate'
 
+  const bmr = Math.round(calculateBMR(weightKg, heightCm, age, sex))
+  const tdee = calculateTDEE(bmr, activityLevel)
   const targetCalories = calculateTargetCalories(tdee, cycleType)
-
-  const macros = calculateMacros({
-    targetCalories,
-    weight_kg: profile?.weight_kg ?? profile?.current_weight_kg ?? 70,
-    cycleType,
-  })
+  const macros = calculateMacros(targetCalories, weightKg, cycleType)
 
   return {
+    bmr,
     tdee,
     targetCalories,
-    proteinG:  macros.proteinG,
-    carbG:     macros.carbG,
-    fatG:      macros.fatG,
-    activityLevel,
-    cycleType,
+    macros,
   }
 }
