@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { supabase } from '../../lib/supabase.js'
-import { DEFAULT_LAYOUTS_BY_CYCLE, CYCLE_TYPE_EMOJI } from '../../constants/cyclePresets.js'
+import { DEFAULT_LAYOUTS_BY_CYCLE, CYCLE_TYPES } from '../../constants/cyclePresets.js'
 import HomeEditor from './HomeEditor.jsx'
 
 // Card components
@@ -283,7 +283,7 @@ export default function ModularHome({ user }) {
           style={{ backgroundColor: '#76b90015', border: '1px solid #76b90033' }}
         >
           <div className="flex items-start gap-2">
-            <span className="text-xl">{CYCLE_TYPE_EMOJI[cyclePrompt.cycle.type] ?? '🎯'}</span>
+            <span className="text-xl">{CYCLE_TYPES[cyclePrompt.cycle.type]?.emoji ?? '🎯'}</span>
             <div>
               <div className="text-[13px] font-bold" style={{ color: 'var(--theme-text)' }}>
                 Ciclo ativo: {cyclePrompt.cycle.name || cyclePrompt.cycle.type}

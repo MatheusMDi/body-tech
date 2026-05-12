@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase.js'
-import { CYCLE_TYPE_EMOJI } from '../../../constants/cyclePresets.js'
+import { CYCLE_TYPES } from '../../../constants/cyclePresets.js'
 
 function ProgressBar({ pct }) {
   return (
@@ -78,7 +78,7 @@ export default function CardCycleStatus({ userId, layout }) {
     )
   }
 
-  const typeEmoji = CYCLE_TYPE_EMOJI[cycle.type] ?? '🎯'
+  const typeEmoji = CYCLE_TYPES[cycle.type]?.emoji ?? '🎯'
   const startDate = new Date(cycle.start_date)
   const endDate = cycle.end_date ? new Date(cycle.end_date) : null
   const now = new Date()
