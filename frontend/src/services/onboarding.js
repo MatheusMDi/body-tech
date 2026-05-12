@@ -52,21 +52,22 @@ export async function completeOnboarding(userId, allData) {
 // Maps onboarding field names → profiles column names
 function mapOnboardingToProfile(data) {
   const out = {}
-  if (data.name            != null) out.name                   = data.name
-  if (data.weight_kg       != null) out.weight_goal            = data.weight_kg
-  if (data.height_cm       != null) out.height_cm              = data.height_cm
-  if (data.goal_weight_kg  != null) out.goal_weight_kg         = data.goal_weight_kg
-  if (data.fasting_protocol!= null) out.fasting_protocol       = data.fasting_protocol
-  if (data.fast_start_time != null) out.fasting_start          = data.fast_start_time
-  if (data.fast_end_time   != null) out.fasting_end            = data.fast_end_time
-  if (data.water_goal_liters!=null) out.water_goal_ml          = Math.round(data.water_goal_liters * 1000)
-  if (data.protein_goal_g  != null) out.protein_goal           = data.protein_goal_g
-  if (data.trains          != null) out.trains                 = data.trains
-  if (data.training_modality!=null) out.training_modality      = data.training_modality
-  if (data.training_time   != null) out.training_time          = data.training_time
-  if (data.training_days_per_week!=null) out.training_days_per_week = data.training_days_per_week
-  if (data.active_supplements!=null) out.active_supplements    = data.active_supplements
-  if (data.notifications_enabled!=null) out.notifications_enabled = data.notifications_enabled
-  if (data.notification_preferences!=null) out.notification_preferences = data.notification_preferences
+  if (data.name                    != null) out.name                     = data.name
+  if (data.weight_kg               != null) out.weight_goal              = data.weight_kg
+  if (data.height_cm               != null) out.height_cm                = data.height_cm
+  if (data.goal_weight_kg          != null) out.goal_weight_kg           = data.goal_weight_kg
+  if (data.fasting_protocol        != null) out.fasting_protocol         = data.fasting_protocol
+  if (data.fast_start_time         != null) out.fasting_start            = data.fast_start_time
+  if (data.fast_end_time           != null) out.fasting_end              = data.fast_end_time
+  if (data.water_goal_liters       != null) out.water_goal_ml            = Math.round(data.water_goal_liters * 1000)
+  if (data.protein_goal_g          != null) out.protein_goal             = data.protein_goal_g
+  if (data.trains                  != null) out.trains                   = data.trains
+  if (data.training_modality       != null) out.training_modality        = data.training_modality
+  if (data.training_time           != null) out.training_time            = data.training_time
+  if (data.training_days_per_week  != null) out.training_days_per_week   = data.training_days_per_week
+  if (data.active_supplements      != null) out.active_supplements       = data.active_supplements
+  if (data.notifications_enabled   != null) out.notifications_enabled    = data.notifications_enabled
+  if (data.notification_preferences!= null) out.notification_preferences = data.notification_preferences
+  if (data.focus_goals             != null) out.focus_goals              = data.focus_goals
   return out
 }

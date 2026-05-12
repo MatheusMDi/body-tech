@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { completeOnboarding, saveOnboardingStep, calculateProteinGoal } from '../../services/onboarding.js'
 import { useOnboarding } from '../../contexts/OnboardingContext.jsx'
+import { InlineError } from '../ErrorBoundary.jsx'
 import OnboardingStep1 from './OnboardingStep1.jsx'
 import OnboardingStep2 from './OnboardingStep2.jsx'
 import OnboardingStep3 from './OnboardingStep3.jsx'
@@ -16,6 +17,7 @@ export default function OnboardingFlow({ user }) {
   const { profile, refresh } = useOnboarding()
   const [step, setStep] = useState(profile?.onboarding_step ?? 1)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
 
   // Accumulated form data across steps
   const [data, setData] = useState({
@@ -46,23 +48,35 @@ export default function OnboardingFlow({ user }) {
     const merged = { ...data, ...partial }
     setData(merged)
     const nextStep = step + 1
-
     setSaving(true)
-    await saveOnboardingStep(user.id, nextStep, merged)
-    setSaving(false)
-
-    setStep(nextStep)
+    setSaveError(null)
+    try {
+      await saveOnboardingStep(user.id, nextStep, merged)
+    } catch {
+      // intermediate step save failure is non-blocking — continue anyway
+    } finally {
+      setSaving(false)
+      setStep(nextStep)
+    }
   }
 
   function goBack() {
+    setSaveError(null)
     setStep(s => Math.max(1, s - 1))
   }
 
   async function handleComplete() {
     setSaving(true)
-    await completeOnboarding(user.id, data)
-    await refresh()
-    setSaving(false)
+    setSaveError(null)
+    try {
+      await completeOnboarding(user.id, data)
+      await refresh()
+      // Component unmounts after refresh() when isOnboarded → true.
+      // setSaving(false) here is intentionally omitted — would run on unmounted component.
+    } catch (err) {
+      setSaveError(err?.message || 'Erro ao salvar. Verifique sua conexão e tente novamente.')
+      setSaving(false)
+    }
   }
 
   const stepProps = { data, mergeData, onNext: goNext, onBack: goBack, saving, user }
@@ -101,7 +115,7 @@ export default function OnboardingFlow({ user }) {
         {step === 5 && <OnboardingStep5 {...stepProps} />}
         {step === 6 && <OnboardingStep6 {...stepProps} />}
         {step === 7 && <OnboardingStep7 {...stepProps} user={user} />}
-        {step === 8 && <OnboardingStep8 {...stepProps} onComplete={handleComplete} saving={saving} />}
+        {step === 8 && <OnboardingStep8 {...stepProps} onComplete={handleComplete} saving={saving} error={saveError} />}
       </div>
     </div>
   )

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth.js'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { ToastProvider } from './contexts/ToastContext.jsx'
+import ErrorBoundary, { ErrorFallback } from './components/ErrorBoundary.jsx'
 import { ModalProvider } from './contexts/ModalContext.jsx'
 import { UserProvider } from './contexts/UserContext.jsx'
 import { OnboardingProvider, useOnboarding } from './contexts/OnboardingContext.jsx'
@@ -86,12 +87,14 @@ function AuthedApp() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        <BrowserRouter>
-          <AuthedApp />
-        </BrowserRouter>
-      </ToastProvider>
-    </ThemeProvider>
+    <ErrorBoundary fallback={(err, reset) => <ErrorFallback error={err} onReset={reset} title="Erro crítico" />}>
+      <ThemeProvider>
+        <ToastProvider>
+          <BrowserRouter>
+            <AuthedApp />
+          </BrowserRouter>
+        </ToastProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   )
 }

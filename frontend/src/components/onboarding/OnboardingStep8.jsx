@@ -1,4 +1,6 @@
-export default function OnboardingStep8({ data, onBack, onComplete, saving }) {
+import { InlineError } from '../ErrorBoundary.jsx'
+
+export default function OnboardingStep8({ data, onBack, onComplete, saving, error }) {
   const rows = [
     { label: 'Jejum', value: `${data.fasting_protocol} (${data.fast_start_time?.slice(0,5)} → ${data.fast_end_time?.slice(0,5)})` },
     { label: 'Meta água', value: `${parseFloat(data.water_goal_liters || 4).toFixed(1)}L/dia` },
@@ -53,10 +55,17 @@ export default function OnboardingStep8({ data, onBack, onComplete, saving }) {
         </p>
       </div>
 
+      {error && <InlineError message={error} onRetry={onComplete} />}
+
       <div className="mt-auto flex gap-3">
-        <button onClick={onBack} className="btn-outline-dark flex-1">Voltar</button>
+        <button onClick={onBack} disabled={saving} className="btn-outline-dark flex-1">Voltar</button>
         <button onClick={onComplete} disabled={saving} className="btn-primary flex-1">
-          {saving ? 'Salvando...' : 'Começar meu protocolo'}
+          {saving ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              Salvando…
+            </span>
+          ) : 'Começar meu protocolo'}
         </button>
       </div>
     </div>
